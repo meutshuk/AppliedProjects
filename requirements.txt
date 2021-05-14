@@ -1,0 +1,6 @@
+requests==2.25.1
+beautifulsoup4==4.9.3
+chatterbot==1.0.8
+Flask==2.0.0
+gtts==2.2.2
+playsound==1.2.2
