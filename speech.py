@@ -1,56 +1,72 @@
-import requests
 from flask import Flask, render_template, request
 from chatterbot import ChatBot
-from bs4 import BeautifulSoup
-from codes import sound, voice
+import csv
+from codes import sound, voice, weather, googleSearch
 import os
+from config import chatBG, botAvatar
 
 application = Flask(__name__)
 chatbotName = "Sidney"
 confidenceLevel = 0.7
 
-#Create Log file
+# Create Log file
 try:
     file = open('BotLog.csv', 'r')
 except IOError:
     file = open('BotLog.csv', 'w')
 
-bote = ChatBot(
-    name="ChatBot",
+bot = ChatBot(
+    "ChatBot",
     logic_adapters=[
-
-            'chatterbot.logic.BestMatch',
-            'chatterbot.logic.TimeLogicAdapter',
-            "chatterbot.logic.MathematicalEvaluation"
-        ])
-
-
-
+        {
+            'import_path': 'chatterbot.logic.BestMatch'
+        },
+        {
+            'import_path': 'chatterbot.logic.LowConfidenceAdapter',
+            'threshold': confidenceLevel,
+            'default_response': 'IDK'
+        }
+    ],
+    # response_selection_method=get_random_response, #Comment this out if you want best response
+    # input_adapter="chatterbot.input.VariableInputTypeAdapter",
+    # output_adapter="chatterbot.output.OutputAdapter",
+    storage_adapter="chatterbot.storage.SQLStorageAdapter",
+    database="botData.sqlite3"
+)
 
 introduction = "Hello my name is Sidney. i am an A.I chatbot how can i help you"
-sound(introduction)
-text = voice()
+# sound(introduction)
+'''text = voice()
 
 for i in text.split():
     if i == 'weather':
+        weather(text)
+        break'''
 
-        # creating url and requests instance
-        url = "https://www.google.com/search?q=" + text
-        html = requests.get(url).content
 
-        # getting raw data
-        soup = BeautifulSoup(html, 'html.parser')
-        temp = soup.find('div', attrs={'class': 'BNeawe iBp4i AP7Wnd'}).text
-        str = soup.find('div', attrs={'class': 'BNeawe tAd8D AP7Wnd'}).text
-        loc = soup.find('span', attrs={'class': 'BNeawe tAd8D AP7Wnd'}).text
+@application.route("/")
+def home():
+    return render_template("index.html", botName=chatbotName, chatBG='./static/apple.jpg', botAvatar=botAvatar)
 
-        # formatting data
-        data = str.split('\n')
-        time = data[0]
-        sky = data[1]
 
-        # printing all data
-        speakWord = "Today is " + time + " in " + loc + " with temperature of " + temp + " and " + sky + " sky"
-        print(speakWord)
-        sound(speakWord)
-        break
+@application.route("/get")
+def get_bot_response():
+    userText = request.args.get('msg')
+    botReply = str(bot.get_response(userText))
+    if botReply is "IDK":
+        botReply = str(bot.get_response('IDKnull'))  ##Send the i don't know code back to the DB
+        # if useGoogle == "yes":
+        botReply = botReply + googleSearch(userText)
+
+    ##Log to CSV file
+    print("Logging to CSV file now")
+    with open('BotLog.csv', 'a', newline='') as logFile:
+        newFileWriter = csv.writer(logFile)
+        newFileWriter.writerow([userText, botReply])
+        logFile.close()
+    return botReply
+
+
+if __name__ == "__main__":
+    # application.run()
+    application.run(host='0.0.0.0', port=80)
