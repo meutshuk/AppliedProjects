@@ -5,6 +5,7 @@ from codes import sound, voice, weather, googleSearch
 import os
 from config import chatBG, botAvatar
 
+databaseLoc = ''
 application = Flask(__name__)
 chatbotName = "Sidney"
 confidenceLevel = 0.7
@@ -25,13 +26,13 @@ bot = ChatBot(
             'import_path': 'chatterbot.logic.LowConfidenceAdapter',
             'threshold': confidenceLevel,
             'default_response': 'IDK'
-        }
+        },
+
     ],
     # response_selection_method=get_random_response, #Comment this out if you want best response
-    # input_adapter="chatterbot.input.VariableInputTypeAdapter",
-    # output_adapter="chatterbot.output.OutputAdapter",
     storage_adapter="chatterbot.storage.SQLStorageAdapter",
-    database="botData.sqlite3"
+    database='./data.sqlite3'
+    #database="botData.sqlite3"
 )
 
 introduction = "Hello my name is Sidney. i am an A.I chatbot how can i help you"
@@ -53,6 +54,13 @@ def home():
 def get_bot_response():
     userText = request.args.get('msg')
     botReply = str(bot.get_response(userText))
+    print(botReply)
+
+    for i in userText.split():
+        if i == 'weather':
+            botReply = weather(userText)
+            break
+
     if botReply is "IDK":
         botReply = str(bot.get_response('IDKnull'))  ##Send the i don't know code back to the DB
         # if useGoogle == "yes":
@@ -69,4 +77,4 @@ def get_bot_response():
 
 if __name__ == "__main__":
     # application.run()
-    application.run(host='0.0.0.0', port=80)
+    application.run(debug=True)

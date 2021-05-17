@@ -48,3 +48,4 @@ def weather(text):
     speakWord = "Today is " + time + " in " + loc + " with temperature of " + temp + " and " + sky + " sky"
     print(speakWord)
     sound(speakWord)
+    return speakWord

@@ -22,7 +22,7 @@
     </script>
 
   </head>
-  <body background="{{chatBG}}" onload="getFirstResponse('Hello');">
+   <body background="{{chatBG}}" onload="getFirstResponse('Hello');">
     <div class="messagecontainer">
       <h1>{{botName}}</h1><hr>
       <div id="chatbox">
@@ -33,11 +33,12 @@
       </div>
       <div id="userInput">
         <input id="textInput" type="text" name="msg" placeholder="Message" autofocus>
-        <input id="buttonInput" type="submit" value="Send">
+        <button type="button" class="buttonInput" value="'Record" onclick="startConverting();">start</button>
+        <input id="buttonInput" onclick="stopConverting();" type="submit" value="Send">
       </div>
 
 
-      <script>
+      <script type="text/javascript">
 		  var rawText;
 			function botTyping(){
 				document.getElementById('typing').style.visibility = "visible";
@@ -56,8 +57,13 @@
             //document.getElementById('userInput').scrollIntoView({block: 'start', behavior: 'smooth'});
           });
         }
+
+
+
+
         function getBotResponse() {
           $.get("/get", { msg: rawText }).done(function(data) {
+            console.log(data)
             var botHtml = '<table class="botText" border="0" width="85%"><tr><td width="70" valign="top"><img class="avatar" src="{{botAvatar}}" align="left" style="margin: 3px;"></td><td valign="top">' + data + '</td></tr></table>';
 			document.getElementById('typing').style.visibility = "hidden";
             playAudio2();
@@ -126,14 +132,57 @@
           		$("#chatbox").append(userHtml);
 				setTimeout(botTyping, 750);
         })
+
+        var overlay = document.getElementById("overlay");
+
+
+
+			var r = document.getElementById('textInput');
+			var speechRecognizer = new webkitSpeechRecognition();// a new speech recognition object
+
+			//function to start listening to voice and then convert it to text
+			function startConverting () {
+			    console.log("apple");
+				if('webkitSpeechRecognition' in window){
+				    console.log("apple1");
+
+					speechRecognizer.continuous = true;
+					speechRecognizer.interimResults = true;
+					speechRecognizer.lang = 'en-IN';
+					speechRecognizer.start();
+					var finalTranscripts = '';
+					speechRecognizer.onresult = function(event){
+					    console.log("apple3");
+						var interimTranscripts = '';
+						for(var i = event.resultIndex; i < event.results.length; i++){
+							var transcript = event.results[i][0].transcript;
+							transcript.replace("\n", "<br>");
+							if(event.results[i].isFinal){
+								finalTranscripts += transcript;
+							}else{
+								interimTranscripts += transcript;
+							}
+						}
+						r.value = finalTranscripts + interimTranscripts ;
+						console.log("apple");
+					};
+					speechRecognizer.onerror = function (event) {
+					};
+				}else{
+					r.innerHTML = 'No browser support. Please upgrade your browser';
+				}
+			}
+			//function to stop listening
+			function stopConverting()
+			{
+                speechRecognizer.stop();
+			}
       </script>
     </div>
 
 <!--<a class="chatSuggest" onclick="$(this).hide(); chatSuggest('Tell me about AI')";>Tell me about AI</a>-->
 
-    <!-- Go to www.addthis.com/dashboard to customize your tools -->
-    <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5c3e0bc516297007"></script>
-    <script type="text/javascript">
+      <script type="text/javascript">
 var addthis_share = addthis_share || {}
 addthis_share = {
 	passthrough : {
